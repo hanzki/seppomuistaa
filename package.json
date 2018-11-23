@@ -1,0 +1,19 @@
+{
+  "name": "seppomuistaa",
+  "version": "0.1.0",
+  "description": "Telegram bot for setting custom reminders",
+  "main": "handler.js",
+  "dependencies": {
+    "request-promise": "^4.2.2",
+    "request": "^2.88.0"
+  },
+  "devDependencies": {
+    "serverless-dynamodb-local": "^0.2.35",
+    "serverless-offline": "^3.31.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hannu Huhtanen",
+  "license": "ISC"
+}

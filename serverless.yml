@@ -24,6 +24,17 @@ provider:
   region: eu-west-1
   environment:
       TELEGRAM_TOKEN: ${env:TELEGRAM_TOKEN}
+      DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 # you can overwrite defaults here
 #  stage: dev
@@ -50,9 +61,9 @@ provider:
 #    variable1: value1
 
 # you can add packaging information here
-package:
-  include:
-    - node_modules/**
+#package:
+#  include:
+#    - node_modules/**
 #    - include-me-dir/**
 #  exclude:
 #    - exclude-me.js
@@ -111,3 +122,24 @@ functions:
 #     NewOutput:
 #       Description: "Description for the output"
 #       Value: "Some output value"
+resources:
+  Resources:
+    usersTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: chat_id
+            AttributeType: N
+        KeySchema:
+          - AttributeName: chat_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+
