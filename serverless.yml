@@ -132,9 +132,14 @@ resources:
         AttributeDefinitions:
           - AttributeName: chat_id
             AttributeType: N
+          - AttributeName: time
+            AttributeType: S
         KeySchema:
           - AttributeName: chat_id
             KeyType: HASH
+          - AttributeName: time
+            KeyType: RANGE
+
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

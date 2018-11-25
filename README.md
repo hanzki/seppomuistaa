@@ -10,3 +10,4 @@ Commands ran so far:
 * serverless create --template aws-nodejs --path my-service
 * serverless deploy
 * serverless dynamodb install
+* `curl --request POST --url https://api.telegram.org/botTELEGRAM_TOKEN/setWebhook --header 'content-type: application/json' --data '{"url": "LAMBDA_URL"}'`

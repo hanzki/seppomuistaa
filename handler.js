@@ -1,11 +1,12 @@
 'use strict';
 const rp = require('request-promise');
+const moment = require('moment');
 const dynamoDb = require('./dynamodb');
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
 const BASE_URL = `https://api.telegram.org/bot${TOKEN}`;
 
-module.exports.hello = async (event, context, callback) => {
+module.exports.hello = async (event, context) => {
 
     try{
         const data = JSON.parse(event.body);
@@ -20,11 +21,20 @@ module.exports.hello = async (event, context, callback) => {
         }
 
         if (message.startsWith("/remember")) {
+            let time, text;
+            if(! isNaN(message.split(" ")[1])) {
+                time = moment().add(Number(message.split(" ")[1]), "minute");
+                text = message.split(" ").slice(2).join(" ");
+            } else {
+                time = moment().add(5, "minute");
+                text = message.split(" ").slice(1).join(" ");
+            }
             const params = {
                 TableName: process.env.DYNAMODB_TABLE,
                 Item: {
                     chat_id: chatId,
-                    text: message.split(" ").slice(1).join(" ")
+                    text: text,
+                    time: time.toISOString()
                 }
             };
             try {
@@ -32,38 +42,31 @@ module.exports.hello = async (event, context, callback) => {
                 response = `Alright, I'll keep that in mind.`
             } catch (error) {
                 console.error(error);
-                callback(null, {
-                    statusCode: error.statusCode || 501,
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: 'Couldn\'t create the todo item.'
-                });
             }
         }
 
         if (message.startsWith("/recall")) {
             const params = {
                 TableName: process.env.DYNAMODB_TABLE,
-                Key: {
-                    chat_id: chatId
+                KeyConditionExpression: 'chat_id = :cid',
+                ExpressionAttributeValues: {
+                    ':cid': chatId
                 },
-                AttributesToGet: [
-                    'text'
-                ]
+                ExpressionAttributeNames: {
+                    '#text': 'text',
+                    '#time': 'time'
+                },
+                ProjectionExpression: '#text, #time'
             };
             try {
-                const data = await dynamoDb.get(params).promise();
-                if (data.Item) {
-                    response = `You asked me to remember "${data.Item.text}"`;
+                const data = await dynamoDb.query(params).promise();
+                if (data) {
+                    response = "Your upcoming reminders:\n" +  data.Items.map(i => moment(i.time).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
                 } else {
                     response = "Sorry I don't remember anything. Can you remind me with /remember";
                 }
             } catch (error) {
                 console.error(error);
-                callback(null, {
-                    statusCode: error.statusCode || 501,
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: 'Couldn\'t create the todo item.'
-                });
             }
         }
 
