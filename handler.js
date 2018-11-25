@@ -61,7 +61,7 @@ module.exports.hello = async (event, context) => {
             try {
                 const data = await dynamoDb.query(params).promise();
                 if (data) {
-                    response = "Your upcoming reminders:\n" +  data.Items.map(i => moment(i.time).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
+                    response = "Your upcoming reminders:\n" +  data.Items.map(i => moment(i.time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
                 } else {
                     response = "Sorry I don't remember anything. Can you remind me with /remember";
                 }
