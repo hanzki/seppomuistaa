@@ -1,61 +1,49 @@
 'use strict';
-const rp = require('request-promise');
 const moment = require('moment');
 const remindersService = require('./reminders');
+const telegramClient = require('./telegram');
 
-const TOKEN = process.env.TELEGRAM_TOKEN;
-const BASE_URL = `https://api.telegram.org/bot${TOKEN}`;
+const instructions = "You can ask me to remind you when you need it.\n" +
+    "Available commands:\n" +
+    "/remember [minutes] [message] - sends you a reminder with the [message] after [minutes] minutes. eg. /remember 5 Get back to work\n" +
+    "/recall - gives you a list of upcoming reminders";
 
 module.exports.hello = async (event, context) => {
 
+    const data = JSON.parse(event.body);
+    const chatId = data.message.chat.id;
+    const message = data.message.text;
+    const command = message.split(" ")[0];
+    const params = message.split(" ").slice(1);
+
     try{
-        const data = JSON.parse(event.body);
-        const message = data.message.text;
-        const chatId = data.message.chat.id;
-        const firstName = data.message.chat.first_name;
-
-        let response = `Please /start, ${firstName}`;
-
-        if (message.startsWith("/start")) {
-            response = `Hello ${firstName}`;
+        if (command === "/start") {
+            await telegramClient.sendMessage(chatId, `Hello ${data.message.chat.first_name}\n` + instructions);
         }
+        else if (command === "/remember" && params.length >= 2 && Number.isFinite(Number(params[0]))) {
+            const time = moment().add(Number(params[0]), "minute");
+            const text = params.slice(1).join(" ");
 
-        if (message.startsWith("/remember")) {
-            const time = moment().add(Number(message.split(" ")[1]), "minute");
-            const text = message.split(" ").slice(2).join(" ");
-
-            try {
-                await remindersService.createReminder(chatId, time, text);
-                response = `Alright, I'll keep that in mind.`
-            } catch (error) {
-                console.error(error);
+            await remindersService.createReminder(chatId, time, text);
+            await telegramClient.sendMessage(chatId, `Alright, I'll keep that in mind.`);
+        }
+        else if (command === "/recall") {
+            const reminders = await remindersService.getUpcoming(chatId);
+            let response;
+            if (reminders.length) {
+                response = "Your upcoming reminders:\n" +  reminders.map(i => moment(i.time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
+            } else {
+                response = "There are no upcoming reminders. You can create one with /remember";
             }
+
+            await telegramClient.sendMessage(chatId, response);
         }
-
-        if (message.startsWith("/recall")) {
-            try {
-                const reminders = await remindersService.getUpcoming(chatId);
-                if (reminders.length) {
-                    response = "Your upcoming reminders:\n" +  reminders.map(i => moment(i.time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
-                } else {
-                    response = "There are no upcoming reminders. You can create one with /remember";
-                }
-            } catch (error) {
-                console.error(error);
-            }
+        else {
+            await telegramClient.sendMessage(chatId, instructions);
         }
-
-        const responseData = { text: response, chat_id: chatId };
-        const url = BASE_URL + "/sendMessage";
-        const options = {method: 'POST', url: url, body: responseData, json: true};
-
-        console.log("options", options);
-        await rp(options);
-        console.log("all sent!");
-
     } catch (e) {
         console.error(e);
-        console.log("Horrible things happenend!", e)
+        await telegramClient.sendMessage(chatId, "An error occured");
     }
 
     return {statusCode: 200};
@@ -66,13 +54,7 @@ module.exports.checkReminders = async (event, context) => {
         const reminders = await remindersService.getDueMessages();
 
         await Promise.all(reminders.map(async reminder => {
-            const messageData = { text: reminder.text, chat_id: reminder.chat_id };
-            const url = BASE_URL + "/sendMessage";
-            const options = {method: 'POST', url: url, body: messageData, json: true};
-
-            console.log(`Sending reminder to ${reminder.chat_id} with text "${reminder.text}"`);
-            await rp(options);
-
+            await telegramClient.sendMessage(reminder.chat_id, reminder.text);
             await remindersService.markReminderSent(reminder.chat_id, reminder.time)
         }));
 
