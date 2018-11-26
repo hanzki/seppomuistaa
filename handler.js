@@ -1,7 +1,7 @@
 'use strict';
 const rp = require('request-promise');
 const moment = require('moment');
-const dynamoDb = require('./dynamodb');
+const remindersService = require('./reminders');
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
 const BASE_URL = `https://api.telegram.org/bot${TOKEN}`;
@@ -21,24 +21,11 @@ module.exports.hello = async (event, context) => {
         }
 
         if (message.startsWith("/remember")) {
-            let time, text;
-            if(! isNaN(message.split(" ")[1])) {
-                time = moment().add(Number(message.split(" ")[1]), "minute");
-                text = message.split(" ").slice(2).join(" ");
-            } else {
-                time = moment().add(5, "minute");
-                text = message.split(" ").slice(1).join(" ");
-            }
-            const params = {
-                TableName: process.env.DYNAMODB_TABLE,
-                Item: {
-                    chat_id: chatId,
-                    text: text,
-                    time: time.toISOString()
-                }
-            };
+            const time = moment().add(Number(message.split(" ")[1]), "minute");
+            const text = message.split(" ").slice(2).join(" ");
+
             try {
-                await dynamoDb.put(params).promise();
+                await remindersService.createReminder(chatId, time, text);
                 response = `Alright, I'll keep that in mind.`
             } catch (error) {
                 console.error(error);
@@ -46,24 +33,12 @@ module.exports.hello = async (event, context) => {
         }
 
         if (message.startsWith("/recall")) {
-            const params = {
-                TableName: process.env.DYNAMODB_TABLE,
-                KeyConditionExpression: 'chat_id = :cid',
-                ExpressionAttributeValues: {
-                    ':cid': chatId
-                },
-                ExpressionAttributeNames: {
-                    '#text': 'text',
-                    '#time': 'time'
-                },
-                ProjectionExpression: '#text, #time'
-            };
             try {
-                const data = await dynamoDb.query(params).promise();
-                if (data) {
-                    response = "Your upcoming reminders:\n" +  data.Items.map(i => moment(i.time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
+                const reminders = await remindersService.getUpcoming(chatId);
+                if (reminders.length) {
+                    response = "Your upcoming reminders:\n" +  reminders.map(i => moment(i.time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + i.text).join("\n");
                 } else {
-                    response = "Sorry I don't remember anything. Can you remind me with /remember";
+                    response = "There are no upcoming reminders. You can create one with /remember";
                 }
             } catch (error) {
                 console.error(error);
@@ -84,4 +59,24 @@ module.exports.hello = async (event, context) => {
     }
 
     return {statusCode: 200};
+};
+
+module.exports.checkReminders = async (event, context) => {
+    try {
+        const reminders = await remindersService.getDueMessages();
+
+        await Promise.all(reminders.map(async reminder => {
+            const messageData = { text: reminder.text, chat_id: reminder.chat_id };
+            const url = BASE_URL + "/sendMessage";
+            const options = {method: 'POST', url: url, body: messageData, json: true};
+
+            console.log(`Sending reminder to ${reminder.chat_id} with text "${reminder.text}"`);
+            await rp(options);
+
+            await remindersService.markReminderSent(reminder.chat_id, reminder.time)
+        }));
+
+    } catch (e) {
+        console.error(e)
+    }
 };
