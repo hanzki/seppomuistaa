@@ -148,7 +148,7 @@ npm install telegram-bot-api
 Now we can change the code in `handler.js`. First let's instantiate the telegram api client at the start of the file,
 just under the line `'use strict';`
 
-```nodejs
+```node
 // Create the telegram api client
 const Telegram = require('telegram-bot-api');
 const api = new Telegram({
@@ -159,7 +159,7 @@ const api = new Telegram({
 With this client we can easily interact with the Telegram API. The client uses the telegram bot token that we added to our
 environment for identification. Now let's make our bot give us a proper greeting. Replace the `hello` function with:
 
-```nodejs
+```node
 module.exports.hello = async (event, context) => {
   try {
     // Read data from the incoming message
@@ -195,7 +195,7 @@ module.exports.hello = async (event, context) => {
 
 With this our handler.js should look like this:
 
-```nodejs
+```node
 'use strict';
 // Create the telegram api client
 const Telegram = require('telegram-bot-api');
