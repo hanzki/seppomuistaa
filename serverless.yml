@@ -24,17 +24,6 @@ provider:
   region: eu-west-1
   environment:
       TELEGRAM_TOKEN: ${env:TELEGRAM_TOKEN}
-      DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 # you can overwrite defaults here
 #  stage: dev
@@ -77,10 +66,6 @@ functions:
           path: my-custom-url
           method: post
           cors: true
-  checkReminders:
-    handler: handler.checkReminders
-    events:
-      - schedule: rate(1 minute)
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -126,29 +111,4 @@ functions:
 #     NewOutput:
 #       Description: "Description for the output"
 #       Value: "Some output value"
-resources:
-  Resources:
-    usersTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
-      Properties:
-        TableName: ${self:provider.environment.DYNAMODB_TABLE}
-        AttributeDefinitions:
-          - AttributeName: chat_id
-            AttributeType: N
-          - AttributeName: time
-            AttributeType: S
-        KeySchema:
-          - AttributeName: chat_id
-            KeyType: HASH
-          - AttributeName: time
-            KeyType: RANGE
-
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-
-plugins:
-  - serverless-dynamodb-local
-  - serverless-offline
 

@@ -36,20 +36,3 @@ module.exports.hello = async (event, context) => {
   // For telegram bots it is good to always respond with success code 200 as otherwise the Telegram server will resend the message to our bot
   return {statusCode: 200};
 };
-
-module.exports.checkReminders = async (event, context) => {
-  try {
-    const reminders = await remindersService.getDueMessages();
-
-    await Promise.all(reminders.map(async reminder => {
-      await api.sendMessage({
-        chat_id: reminder.chat_id,
-        text: reminder.text
-      });
-      await remindersService.markReminderSent(reminder.chat_id, reminder.time)
-    }));
-
-  } catch (e) {
-    console.error(e)
-  }
-};
