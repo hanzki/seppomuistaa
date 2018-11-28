@@ -238,17 +238,24 @@ module.exports.hello = async (event, context) => {
 
 Our bot is almost complete but we also need to make a slight change in the `serverless.yml` file. Because Telegram servers
 will be sending data to our bot we need to change the endpoint to accept HTTP POST requests. Also we need to enable something
-called CORS to allow a third-party (Telegram in this case) to call our endpoint. Change the function definition to this:
+called CORS to allow a third-party (Telegram in this case) to call our endpoint. We also need to specify in the `provider` section
+that we want the `TELEGRAM_TOKEN` environmental variable to be passed to our lambda function. Here are the changes we need to do:
 
 ```yaml
+provider:
+  name: aws
+  runtime: nodejs8.10
+  environment:
+      TELEGRAM_TOKEN: ${env:TELEGRAM_TOKEN} # This adds the TELEGRAM_TOKEN variable in our local environment to the lambda function
+
 functions:
   hello:
     handler: handler.hello
     events:
       - http:
           path: execute
-          method: post
-          cors: true
+          method: post  # Change the method to post
+          cors: true    # This allows Telegram to call our endpoint
 ```
 
 Now let's deploy our code again.
