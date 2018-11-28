@@ -109,7 +109,7 @@ serverless deploy
 ```
 
 After deploy you will see the newly created endpoint printed out in your terminal. It will look something like
-`GET - https://xxxxxxx.execute-api.us-east-1.amazonaws.com/dev/execute`. You can open the URL in a browser and Voilà!
+`GET - https://u3ir5tjcsf.execute-api.us-east-1.amazonaws.com/dev/execute`. You can open the URL in a browser and Voilà!
 our lambda function is now invokable by HTTP requests.
 
 ### 4. Making a chatbot
@@ -124,4 +124,160 @@ respond to the user's message by calling the Telegram's API.
 (3) The API Gateway creates an event which triggers our lambda function. (4) Our lambda function responds to the user's message by calling the telegram API.
 (5) The telegram server sends our response to the user.*
 
-In order to make this happen we need to change the code of our lambda function in `handler.js`.
+The first step in creating a chatbot will be registering our bot with Telegram in order to get access to the Telegram API.
+Telegram has a special bot called the "BotFather" who handles registration and configuration of other Telegram bots. Let's
+shoot [@BotFather](https://t.me/BotFather) a message on Telegram. Send BotFather the /newbot command which initiates the
+new bot creation flow. Answer all BotFather's questions and in the end you will see a message like this:
+
+![BotFather response with the bot API token](docs/images/botfather_response.png)
+
+Let's add the bot token as an evironment variable so our code can use it. Copy the token from BotFather's response and
+add it to your environment:
+
+```bash
+export TELEGRAM_TOKEN=<Bot API Token>
+```
+
+Now let's turn our focus to the code of our bot. We need to change the code of our lambda function in `handler.js`, but
+first we need one library. We are going to use the `telegram-bot-api` package for interacting with the Telegram API. Install it with:
+
+```bash
+npm install telegram-bot-api
+```
+
+Now we can change the code in `handler.js`. First let's instantiate the telegram api client at the start of the file,
+just under the line `'use strict';`
+
+```nodejs
+// Create the telegram api client
+const Telegram = require('telegram-bot-api');
+const api = new Telegram({
+  token: process.env.TELEGRAM_TOKEN
+});
+```
+
+With this client we can easily interact with the Telegram API. The client uses the telegram bot token that we added to our
+environment for identification. Now let's make our bot give us a proper greeting. Replace the `hello` function with:
+
+```nodejs
+module.exports.hello = async (event, context) => {
+  try {
+    // Read data from the incoming message
+    const data = JSON.parse(event.body);
+    const chatId = data.message.chat.id;
+    const message = data.message.text;
+    const firstName = data.message.chat.first_name;
+
+    // The first message sent to a Telegram bot is always "/start"
+    if(message === "/start") {
+      await api.sendMessage({
+        chat_id: chatId,
+        text: `Nice to meet you, ${firstName}!`
+      });
+    }
+    // Let's respond with a different response for other messages
+    else {
+      await api.sendMessage({
+        chat_id: chatId,
+        text: `Very interesting, ${firstName}`
+      });
+    }
+
+  } catch (e) {
+    // Something went wrong. Let's write it to the log
+    console.error(e);
+  }
+
+  // For telegram bots it is good to always respond with success code 200 as otherwise the Telegram server will resend the message to our bot
+  return { statusCode: 200 };
+};
+```
+
+With this our handler.js should look like this:
+
+```nodejs
+'use strict';
+// Create the telegram api client
+const Telegram = require('telegram-bot-api');
+const api = new Telegram({
+  token: process.env.TELEGRAM_TOKEN
+});
+
+module.exports.hello = async (event, context) => {
+  try {
+    // Read data from the incoming message
+    const data = JSON.parse(event.body);
+    const chatId = data.message.chat.id;
+    const message = data.message.text;
+    const firstName = data.message.chat.first_name;
+
+    // The first message sent to a Telegram bot is always "/start"
+    if (message === "/start") {
+      await api.sendMessage({
+        chat_id: chatId,
+        text: `Nice to meet you, ${firstName}!`
+      });
+    }
+    // Let's respond with a different response for other messages
+    else {
+      await api.sendMessage({
+        chat_id: chatId,
+        text: `Very interesting, ${firstName}`
+      });
+    }
+
+  } catch (e) {
+    // Something went wrong. Let's write it to the log
+    console.error(e);
+  }
+
+  // For telegram bots it is good to always respond with success code 200 as otherwise the Telegram server will resend the message to our bot
+  return {statusCode: 200};
+};
+```
+
+Our bot is almost complete but we also need to make a slight change in the `serverless.yml` file. Because Telegram servers
+will be sending data to our bot we need to change the endpoint to accept HTTP POST requests. Also we need to enable something
+called CORS to allow a third-party (Telegram in this case) to call our endpoint. Change the function definition to this:
+
+```yaml
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: execute
+          method: post
+          cors: true
+```
+
+Now let's deploy our code again.
+
+```bash
+serverless deploy
+```
+
+With this our bot should be ready but the only problem is that the Telegram is not sending the messages to our bot as
+we haven't registered our bot endpoint with Telegram. Sadly this is something the BotFather cannot help us with. Instead
+we need to call the bot API directly. Luckily we only need to do this once. We will need our lambda's endpoint URL. It should
+be visible in your terminal as serverless displays it after each deploy. Let's send our URL to Telegram with curl (remember
+to replace the URL with our lambda's URL):
+
+```bash
+curl --request POST --url https://api.telegram.org/bot$TELEGRAM_TOKEN/setWebhook --header 'content-type: application/json' --data '{"url": "https://u3ir5tjcsf.execute-api.us-east-1.amazonaws.com/dev/execute"}'
+```
+
+Congratulations! You just created your first Telegram bot. Send your bot a message and see it respond.
+
+## Summary
+
+We created a simple but functioning Telegram bot from nothing with hardly any effort. However, so far our bot doesn't
+do anything expect says pleasantries. There is also much more to the world of serverless than Lambda functions responding to
+HTTP requests. In the next step we will integrate our bot will DynamoDB to allow it to remember things from one invokation
+to the next.
+
+
+
+
+
+
