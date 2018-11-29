@@ -10,7 +10,7 @@ Before starting make sure you have the following:
 * Basic skills with command line (very simple stuff like how to navigate between directories and how to execute commands)
 * A text editor or IDE of your choice (we are going to write a bit of Javascript)
 * [curl]() (you can check if you have curl by running `curl --version`) or any other HTTP client (eg. Postman, etc.)
-* [NodeJS](https://nodejs.org) (this should also include the node package manager **npm**)
+* [NodeJS](https://nodejs.org) (you also need the package manager **npm** which should come with node)
 * **AWS access keys** (this includes the access key id and the secret access key)
 * A [Telegram](https://telegram.org/) account and a client (it is recommended that you have the client on the same computer you are using right now)
 
@@ -29,10 +29,10 @@ For building and deploying our chatbot we will be using the [Serverless Framewor
 npm install serverless -g
 ```
 
-Then we can create our project by running:
+Then we need to choose a name for our bot and create a serverless project by running:
 
 ```bash
-serverless create --template aws-nodejs --path my-chatbot
+serverless create --template aws-nodejs --path my-chatbot --name <Name of your bot>
 ```
 
 This will create an empty serverless project based on the aws-nodejs template. The project will be placed in directory
@@ -89,6 +89,9 @@ functions:                  # This starts the functions section which defines al
     handler: handler.hello  # This sets the function hello in file handler.js as the entrypoint of the lambda function
 ```
 
+**NOTE:** `serverless.yml` is a YAML file where the indentation of lines has syntaxical meaning. Also in YAML files the
+indentation should be made using spaces instead of tab characters.
+
 We will need to extend this function definition to include an event listener for HTTP requests. This will create an Amazon
 API Gateway for us which routes messages sent to the endpoints we specify to our lambda function. Here's the section after the change:
 
@@ -125,9 +128,13 @@ respond to the user's message by calling the Telegram's API.
 (5) The telegram server sends our response to the user.*
 
 The first step in creating a chatbot will be registering our bot with Telegram in order to get access to the Telegram API.
-Telegram has a special bot called the "BotFather" who handles registration and configuration of other Telegram bots. Let's
-shoot [@BotFather](https://t.me/BotFather) a message on Telegram. Send BotFather the /newbot command which initiates the
-new bot creation flow. Answer all BotFather's questions and in the end you will see a message like this:
+Telegram has a special bot called the "BotFather" who handles registration and configuration of other Telegram bots.
+
+Let's shoot [@BotFather](https://t.me/BotFather) a message on Telegram. Send BotFather the `/newbot` command which
+initiates the new bot creation flow. First he will ask for the name of your bot. You can freely choose a name and it can
+include special characters like spaces. Next you need to provide your bots *username*. This is the unique identifier of
+your bot. There are some limitations for example it needs to end in "bot" and cannot contain spaces. Also the username
+needs to be globally unique so you might need to try couple times. Finally you will see a message like this:
 
 ![BotFather response with the bot API token](docs/images/botfather_response.png)
 
@@ -271,7 +278,10 @@ be visible in your terminal as serverless displays it after each deploy. Let's s
 to replace the URL with our lambda's URL):
 
 ```bash
-curl --request POST --url https://api.telegram.org/bot$TELEGRAM_TOKEN/setWebhook --header 'content-type: application/json' --data '{"url": "https://u3ir5tjcsf.execute-api.us-east-1.amazonaws.com/dev/execute"}'
+curl --request POST \
+--url https://api.telegram.org/bot$TELEGRAM_TOKEN/setWebhook \
+--header 'content-type: application/json' \
+--data '{"url": "<Your bot url>"}'
 ```
 
 Congratulations! You just created your first Telegram bot. Send your bot a message and see it respond.
