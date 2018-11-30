@@ -5,6 +5,9 @@ const api = new Telegram({
   token: process.env.TELEGRAM_TOKEN
 });
 
+const moment = require("moment");
+const storage = require('./storage');
+
 module.exports.hello = async (event, context) => {
   try {
     // Read data from the incoming message
@@ -18,6 +21,28 @@ module.exports.hello = async (event, context) => {
       await api.sendMessage({
         chat_id: chatId,
         text: `Nice to meet you, ${firstName}!`
+      });
+    }
+    else if (message.startsWith("/remember")) {
+      const delay = Number(message.split(" ")[1]);
+      const reminder = message.split(" ").slice(2).join(" ");
+
+      const time = moment().add(delay, "minute");
+      await storage.createReminder(chatId, time, reminder);
+      await api.sendMessage({
+        chat_id: chatId,
+        text: `Reminder saved.`
+      });
+    }
+    else if (message.startsWith("/recall")) {
+      const reminders = await storage.getReminders(chatId);
+      const reminderStrings = reminders.map(r =>
+        moment(r.reminder_time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + r.reminder_text
+      );
+
+      await api.sendMessage({
+        chat_id: chatId,
+        text: "Your upcoming reminders:\n" + reminderStrings.join("\n")
       });
     }
     // Let's respond with a different response for other messages
