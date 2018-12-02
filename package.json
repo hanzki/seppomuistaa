@@ -4,9 +4,12 @@
   "description": "Telegram bot for setting custom reminders",
   "main": "handler.js",
   "dependencies": {
+    "moment": "^2.22.2",
     "telegram-bot-api": "^1.2.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "aws-sdk": "^2.368.0"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
