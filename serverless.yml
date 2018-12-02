@@ -20,8 +20,6 @@ service: seppomuistaa # NOTE: update this with your service name
 provider:
   name: aws
   runtime: nodejs8.10
-  stage: dev
-  region: eu-west-1
   environment:
       TELEGRAM_TOKEN: ${env:TELEGRAM_TOKEN}
       DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
