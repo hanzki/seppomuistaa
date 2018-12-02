@@ -96,7 +96,7 @@ the Lambda environment which nice.
 In order to keep our code a bit more organised let's create a new file called `storage.js` for our DynamoDB related code.
 In the new file let's first import and initialised the DynamoDB client:
 
-```nodejs
+```node
 'use strict';
 const AWS = require('aws-sdk');
 const client = new AWS.DynamoDB.DocumentClient();
@@ -109,7 +109,7 @@ but for now let's continue with the tutorial.
 
 Next, let's add a method for creating a new reminder and saving it to the database:
 
-```nodejs
+```node
 /**
  * Creates a new reminder and saves it to the database.
  *
@@ -138,7 +138,7 @@ are both "reserved words" in DynamoDB.
 Now that we have a way to save reminders to the database we also need a way to retrieve what we have saved. Let's add another method
 to `storage.js`:
 
-```nodejs
+```node
 /**
  * Retrieves all reminders ofr given chatId from the database.
  *
@@ -167,7 +167,7 @@ So let's open up `handler.js` and get to work. First we'll be importing the `sto
 adding a library called [Moment.js](https://momentjs.com/) which helps us in dealing with time values. Add these rows before
 the start of `module.exports.hello = ...`:
 
-```nodejs
+```node
 const moment = require("moment");
 const storage = require('./storage');
 ```
@@ -178,7 +178,7 @@ the bot send a message "Get up" to us after 5 minutes). Secondly, we want a `/li
 
 Currently our bot can distinquish only between the `/start` command and other messages. Let's change the logic to add our new messages:
 
-```nodejs
+```node
     // The first message sent to a Telegram bot is always "/start"
     if (message === "/start") {
       await api.sendMessage({
@@ -265,7 +265,7 @@ per month! However, when taking in account that AWS offers 1 million requests pe
 So let's get to work! Firstly, we need new functionalities for our storage module. So let's add these two methods to the
 `storage.js`:
 
-```nodejs
+```node
 /**
  * Retrieves all reminders that are ready to be sent (reminder_time < current time)
  * @returns List of reminders with `chat_id`, `reminder_text` and `reminder_time`
@@ -303,7 +303,7 @@ With these we can retrieve a list of all messages that need to be sent, and also
 already sent and don't need anymore. Because the `getDueReminders` uses the `moment` library we need import it at the begining
 of `storage.js`:
 
-```nodejs
+```node
 const moment = require('moment');
 ```
 
@@ -311,7 +311,7 @@ Now we need to add another lambda handler to the `handler.js` file. We won't tou
 function but instead at the bottom of the file we'll add another handler which will take care of checking for due reminders
 and sending them to the users:
 
-```nodejs
+```node
 module.exports.checkReminders = async (event, context) => {
   try {
     // get the list of reminders that are ready for sending
