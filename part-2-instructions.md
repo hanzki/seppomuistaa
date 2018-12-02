@@ -365,13 +365,30 @@ functions:
 **NOTE:** Be careful with the indentation here. The `hello:` and `checkReminders:` are both function definitions and should
 be on the same indentation level.
 
-Now if we deploy our chatbot our virtual assistent should be complete. In case you already added couple reminders after
-finishing the section 2. you might already hear a notification from your chat window as our assistent just reminded us of
-something important.
+As you might have noticed the Serverless Framework makes creating multiple lambdas simple as we can easily share code
+between individual Lambdas. In fact unless you configure otherwise in the `serverless.yml` all lambdas in the project
+are deployed with the same code, the only difference being the entry point which is defined by the `handler:` parameter.
+
+Finally our virtual assistant is ready and we can deploy it for the last time.
+
+```bash
+serverless deploy
+```
+
+In case you already added couple reminders after finishing the section 2 you might already hear a notification from your
+chat window as our assistent just reminded us of something important. If not you can ask your bot to remind you in couple
+minutes (eg. `/remind 5 Hello there`) and soon you will see it working. Also the reminders should dissappear from the `/list`
+list after the bot sends them.
 
 ## Summary
 
+We turned our simple and useless chatbot into a functional virtual assistant. We learned how to combine serverless storage
+with serverless computing to provide powerful and scalable service. We also learned how to add multiple lambdas into
+the single project and how to trigger lambdas based on the CloudWatch schedules.
 
+This example was just for the purpose of teaching the basics and overlooks important details like automated testing and
+more robust input validation and error handling. These are just some possible ideas how you can extend this example
+into something more useful and robust.
 
 
 
