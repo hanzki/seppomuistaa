@@ -23,23 +23,35 @@ module.exports.hello = async (event, context) => {
         text: `Nice to meet you, ${firstName}!`
       });
     }
-    else if (message.startsWith("/remember")) {
+    // Create new reminder when user send "/remind" command
+    else if (message.startsWith("/remind")) {
+      // first word after "/remind" should be the number of minutes
       const delay = Number(message.split(" ")[1]);
+      // here split the message to words, drop first 2 words and then join them back together to get the reminder text
       const reminder = message.split(" ").slice(2).join(" ");
 
+      // calculate when the reminder should be sent by adding delay minutes to current time
       const time = moment().add(delay, "minute");
+      // save the reminder to database
       await storage.createReminder(chatId, time, reminder);
+
+      // let the user know that the reminder was saved
       await api.sendMessage({
         chat_id: chatId,
         text: `Reminder saved.`
       });
     }
-    else if (message.startsWith("/recall")) {
+    // List existing reminders when user sends "/list" command
+    else if (message.startsWith("/list")) {
+      // fetch all reminders for this chat
       const reminders = await storage.getReminders(chatId);
+
+      // convert reminders to strings (eg. "Sun, Dec 2nd, 12:24: Get up")
       const reminderStrings = reminders.map(r =>
         moment(r.reminder_time).utcOffset(2).format("ddd, MMM Do, H:mm") + ": " + r.reminder_text
       );
 
+      // send user the list of reminders
       await api.sendMessage({
         chat_id: chatId,
         text: "Your upcoming reminders:\n" + reminderStrings.join("\n")
