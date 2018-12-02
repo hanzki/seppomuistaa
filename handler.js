@@ -73,3 +73,25 @@ module.exports.hello = async (event, context) => {
   // For telegram bots it is good to always respond with success code 200 as otherwise the Telegram server will resend the message to our bot
   return {statusCode: 200};
 };
+
+module.exports.checkReminders = async (event, context) => {
+  try {
+    // get the list of reminders that are ready for sending
+    const reminders = await storage.getDueReminders();
+
+    // because all the methods in in telegram api and our storage module are asynchronous we need to map the list of
+    // reminders into a list of promises and then process those with Promise.all in order to make sure that we make
+    // sure all of the actions have time to complete before moving on
+    await Promise.all(reminders.map(async reminder => {
+      // send the user their reminder
+      await api.sendMessage(reminder.chat_id, reminder.reminder_text);
+      // delete the reminder that is not needed anymore
+      await storage.deleteReminder(reminder.chat_id, reminder.reminder_time)
+    }));
+
+  } catch (e) {
+    // Something went wrong. Let's write it to the log
+    console.error(e)
+  }
+};
+
