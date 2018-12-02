@@ -57,7 +57,7 @@ module.exports.getDueReminders = async () => {
     ProjectionExpression: 'chat_id, reminder_text, reminder_time'
   };
 
-  const data = await dynamoDb.scan(params).promise();
+  const data = await client.scan(params).promise();
   return data.Items;
 };
 
@@ -72,5 +72,5 @@ module.exports.deleteReminder = async (chatId, time) => {
     Key: { chat_id : chatId, reminder_time: time }
   };
 
-  await dynamoDb.delete(params).promise();
+  await client.delete(params).promise();
 };

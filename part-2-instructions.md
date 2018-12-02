@@ -172,6 +172,12 @@ const moment = require("moment");
 const storage = require('./storage');
 ```
 
+We also need to download Moment.js from the NPM:
+
+```bash
+npm install moment
+```
+
 Then let's make our bot to respond to couple new commands. We want to add two new commands. Firstly, `/remind X message` which would
 makes the bot create a new reminder for `X` minutes from now with the `message` as the reminder text (eg. `/remind 5 Get up` would make
 the bot send a message "Get up" to us after 5 minutes). Secondly, we want a `/list` command which shows a list of upcoming reminders.

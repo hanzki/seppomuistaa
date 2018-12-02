@@ -84,7 +84,10 @@ module.exports.checkReminders = async (event, context) => {
     // sure all of the actions have time to complete before moving on
     await Promise.all(reminders.map(async reminder => {
       // send the user their reminder
-      await api.sendMessage(reminder.chat_id, reminder.reminder_text);
+      await api.sendMessage({
+        chat_id: reminder.chat_id,
+        text: reminder.reminder_text
+      });
       // delete the reminder that is not needed anymore
       await storage.deleteReminder(reminder.chat_id, reminder.reminder_time)
     }));
