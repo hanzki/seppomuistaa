@@ -192,7 +192,6 @@ Currently our bot can distinquish only between the `/start` command and other me
         text: `Nice to meet you, ${firstName}!`
       });
     }
-    // ##### NEW CODE STARTS HERE #####
     // Create new reminder when user send "/remind" command
     else if (message.startsWith("/remind")) {
       // first word after "/remind" should be the number of minutes
@@ -227,7 +226,6 @@ Currently our bot can distinquish only between the `/start` command and other me
         text: "Your upcoming reminders:\n" + reminderStrings.join("\n")
       });
     }
-    // ##### NEW CODE ENDS HERE #####
     // Let's respond with a different response for other messages
     else {
       await api.sendMessage({
@@ -286,7 +284,7 @@ module.exports.getDueReminders = async () => {
     ProjectionExpression: 'chat_id, reminder_text, reminder_time'
   };
 
-  const data = await dynamoDb.scan(params).promise();
+  const data = await client.scan(params).promise();
   return data.Items;
 };
 
@@ -301,7 +299,7 @@ module.exports.deleteReminder = async (chatId, time) => {
     Key: { chat_id : chatId, reminder_time: time }
   };
 
-  await dynamoDb.delete(params).promise();
+  await client.delete(params).promise();
 };
 ```
 
@@ -328,7 +326,10 @@ module.exports.checkReminders = async (event, context) => {
     // sure all of the actions have time to complete before moving on
     await Promise.all(reminders.map(async reminder => {
       // send the user their reminder
-      await api.sendMessage(reminder.chat_id, reminder.reminder_text);
+      await api.sendMessage({
+        chat_id: reminder.chat_id,
+        text: reminder.reminder_text
+      });
       // delete the reminder that is not needed anymore
       await storage.deleteReminder(reminder.chat_id, reminder.reminder_time)
     }));
