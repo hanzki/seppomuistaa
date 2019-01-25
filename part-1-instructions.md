@@ -38,6 +38,13 @@ serverless create --template aws-nodejs --path my-chatbot --name <Name of your b
 This will create an empty serverless project based on the aws-nodejs template. The project will be placed in directory
 called "my-chatbot". You can change the name of the folder to whatever you like.
 
+Navigate to the project directory as the rest of the commands in this tutorial need to be run inside your serverless project
+directory:
+
+```bash
+cd my-chatbot
+```
+
 In the directory we will see two new files:
 
 * `serverless.yml` - This is the configuration file for the serverless framework application. It contains the definition of one or multiple
@@ -52,9 +59,16 @@ In order to deploy the Lambda function we need to make sure that the serverless 
 to do this is to set the environmental variables `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. You can do that by running
 these commands in your terminal:
 
+On Linux or MacOS:
 ```bash
 export AWS_ACCESS_KEY_ID=<Access key ID>
 export AWS_SECRET_ACCESS_KEY=<Secret access key>
+```
+
+On Windows:
+```cmd
+set AWS_ACCESS_KEY_ID=<Access key ID>
+set AWS_SECRET_ACCESS_KEY=<Secret access key>
 ```
 
 *Be careful not to share these credentials as bad people can do bad things with them. Many people accidentally share these
@@ -141,8 +155,14 @@ needs to be globally unique so you might need to try couple times. Finally you w
 Let's add the bot token as an evironment variable so our code can use it. Copy the token from BotFather's response and
 add it to your environment:
 
+On Linux and MacOS:
 ```bash
 export TELEGRAM_TOKEN=<Bot API Token>
+```
+
+On Windows:
+```cmd
+set TELEGRAM_TOKEN=<Bot API Token>
 ```
 
 Now let's turn our focus to the code of our bot. We need to change the code of our lambda function in `handler.js`, but
@@ -277,11 +297,17 @@ we need to call the bot API directly. Luckily we only need to do this once. We w
 be visible in your terminal as serverless displays it after each deploy. Let's send our URL to Telegram with curl (remember
 to replace the URL with our lambda's URL):
 
+On Linux and MacOS:
 ```bash
 curl --request POST \
 --url https://api.telegram.org/bot$TELEGRAM_TOKEN/setWebhook \
 --header 'content-type: application/json' \
 --data '{"url": "<Your bot url>"}'
+```
+
+On Windows:
+```cmd
+curl -H "content-type: application/json" -d "{\"url\": \"<Your bot url>\"}" https://api.telegram.org/bot%TELEGRAM_TOKEN%/setWebhook
 ```
 
 Congratulations! You just created your first Telegram bot. Send your bot a message and see it respond.
