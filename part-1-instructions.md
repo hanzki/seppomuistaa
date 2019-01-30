@@ -169,7 +169,7 @@ Now let's turn our focus to the code of our bot. We need to change the code of o
 first we need one library. We are going to use the `telegram-bot-api` package for interacting with the Telegram API. Install it with:
 
 ```bash
-npm install telegram-bot-api
+npm install telegram-bot-api@1.2.2
 ```
 
 Now we can change the code in `handler.js`. First let's instantiate the telegram api client at the start of the file,
